@@ -31,3 +31,15 @@ print(logits.shape)  # torch.Size([2, 16, 1000])
 2. `FeedForward`：逐 token 的两层 MLP。
 3. `TransformerBlock`：Pre-LN、注意力、MLP 和两个残差连接。
 4. `Transformer`：token/位置嵌入、多个 block、语言模型输出层。
+
+## 在 Tiny Shakespeare 上预训练
+
+安装 PyTorch 后运行：
+
+```bash
+python3 train.py
+```
+
+`train.py` 会完成字符级 token 化、90%/10% 数据划分、随机采样 batch、
+next-token 训练和验证。训练结束后，模型保存在
+`checkpoints/tiny_shakespeare.pt`，并在终端输出一段生成文本。
