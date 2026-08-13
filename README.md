@@ -76,3 +76,14 @@ uv run sft_countdown.py
 uv run train.py
 uv run sft_countdown.py
 ```
+
+## GRPO 组采样
+
+从 SFT checkpoint 加载策略，并为每道题采样一组回答：
+
+```bash
+uv run grpo_rollout.py
+```
+
+脚本会展示生成 token、old log-prob 和 completion mask 的形状，并打印每个
+回答的 reward 与组内 advantage。这一步只收集 GRPO 训练数据，不更新模型。
