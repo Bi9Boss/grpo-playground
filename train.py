@@ -15,6 +15,7 @@ from pathlib import Path
 
 import torch
 
+from tokenizer import build_shared_tokenizer
 from transformer import Transformer, TransformerConfig
 
 
@@ -32,40 +33,10 @@ CHECKPOINT_PATH = Path("checkpoints/tiny_shakespeare.pt")
 # LEARNING_RATE 控制每次参数更新的幅度。
 BATCH_SIZE = 32
 SEQ_LEN = 128
-MAX_STEPS = 2_000
-EVAL_INTERVAL = 200
+MAX_STEPS = 200
+EVAL_INTERVAL = 20
 EVAL_STEPS = 20
 LEARNING_RATE = 3e-4
-
-
-class CharacterTokenizer:
-    """最简单的字符级 tokenizer。
-
-    它会收集数据集中出现过的所有字符，并为每个字符分配一个整数 ID。
-    例如，假设字符表是 ["\n", "a", "b"]，那么 "ab" 会被编码成
-    [1, 2]。这种方法不涉及 BPE 等复杂算法，很适合用来学习语言模型训练流程。
-    """
-
-    def __init__(self, text: str):
-        # set(text) 去除重复字符，sorted(...) 保证每次运行时字符 ID 都相同。
-        self.characters = sorted(set(text))
-
-        # 编码时使用 char_to_id，解码时使用方向相反的 id_to_char。
-        self.char_to_id = {char: index for index, char in enumerate(self.characters)}
-        self.id_to_char = {index: char for index, char in enumerate(self.characters)}
-
-    @property
-    def vocab_size(self) -> int:
-        """返回词表大小，也就是数据集中不同字符的数量。"""
-        return len(self.characters)
-
-    def encode(self, text: str) -> list[int]:
-        """把字符串转换成 token ID 列表。"""
-        return [self.char_to_id[char] for char in text]
-
-    def decode(self, token_ids: list[int]) -> str:
-        """把 token ID 列表还原成字符串。"""
-        return "".join(self.id_to_char[token_id] for token_id in token_ids)
 
 
 def choose_device() -> str:
@@ -158,9 +129,10 @@ def main() -> None:
     torch.manual_seed(42)
     device = choose_device()
 
-    # 读取完整文本，建立字符表，再将整个数据集编码成一条连续的 token 序列。
+    # 读取完整文本，并创建后续 SFT、GRPO 也会沿用的统一词表。Countdown 字符
+    # 此时只在词表中占据固定位置；预训练数据仍然只有 Tiny Shakespeare。
     text = DATA_PATH.read_text(encoding="utf-8")
-    tokenizer = CharacterTokenizer(text)
+    tokenizer = build_shared_tokenizer(text)
     all_tokens = torch.tensor(tokenizer.encode(text), dtype=torch.long)
 
     # 前 90% 用于更新模型参数，后 10% 只用于验证。这里按文本位置切分，
@@ -225,6 +197,7 @@ def main() -> None:
     CHECKPOINT_PATH.parent.mkdir(exist_ok=True)
     torch.save(
         {
+            "stage": "pretrain",
             "model_config": asdict(model_config),
             "model_state_dict": model.state_dict(),
             "characters": tokenizer.characters,

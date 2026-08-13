@@ -40,9 +40,10 @@ print(logits.shape)  # torch.Size([2, 16, 1000])
 python3 train.py
 ```
 
-`train.py` 会完成字符级 token 化、90%/10% 数据划分、随机采样 batch、
-next-token 训练和验证。训练结束后，模型保存在
-`checkpoints/tiny_shakespeare.pt`，并在终端输出一段生成文本。
+`train.py` 会先建立预训练、SFT 和 GRPO 共用的字符词表，再完成 90%/10%
+数据划分、随机采样 batch、next-token 训练和验证。预训练数据仍然只有 Tiny
+Shakespeare；Countdown 字符此时只是在统一词表中预留位置。训练结束后，模型
+保存在 `checkpoints/tiny_shakespeare.pt`。
 
 ## Countdown 任务
 
@@ -55,3 +56,23 @@ uv run countdown.py
 
 奖励由合法表达式、正确使用全部数字和算式结果正确三个部分组成。完整正确的
 回答获得 1 分，直接输出目标数字无法获得正确性奖励。
+
+## Countdown 监督热身
+
+正式进行 GRPO 前，先使用求解器生成的 10,000 条答案做一段监督训练：
+
+```bash
+uv run sft_countdown.py
+```
+
+脚本会从 `checkpoints/tiny_shakespeare.pt` 恢复相同的 tokenizer、模型结构和
+全部预训练权重，再进行 SFT。监督 loss 只计算 `Equation:` 后面的答案 token，
+不计算 prompt 和 padding。训练后的策略保存在
+`checkpoints/countdown_sft.pt`，作为后续 GRPO 的初始策略。
+
+完整顺序为：
+
+```bash
+uv run train.py
+uv run sft_countdown.py
+```
