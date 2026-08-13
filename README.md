@@ -43,3 +43,15 @@ python3 train.py
 `train.py` 会完成字符级 token 化、90%/10% 数据划分、随机采样 batch、
 next-token 训练和验证。训练结束后，模型保存在
 `checkpoints/tiny_shakespeare.pt`，并在终端输出一段生成文本。
+
+## Countdown 任务
+
+`countdown.py` 包含 Countdown Parquet 数据读取、递归求解器和奖励函数。
+运行下面的命令可以读取数据，并查看前五道题的求解结果：
+
+```bash
+uv run countdown.py
+```
+
+奖励由合法表达式、正确使用全部数字和算式结果正确三个部分组成。完整正确的
+回答获得 1 分，直接输出目标数字无法获得正确性奖励。
