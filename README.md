@@ -87,3 +87,14 @@ uv run grpo_rollout.py
 
 脚本会展示生成 token、old log-prob 和 completion mask 的形状，并打印每个
 回答的 reward 与组内 advantage。这一步只收集 GRPO 训练数据，不更新模型。
+
+## GRPO 概率对齐
+
+重新计算 current policy 和固定 reference policy 对生成 token 的 log-prob：
+
+```bash
+uv run grpo_log_probs.py
+```
+
+在首次参数更新之前，脚本会验证 current、old、reference 三份 log-prob 基本
+一致，因此 probability ratio 约为 1，KL 约为 0。
