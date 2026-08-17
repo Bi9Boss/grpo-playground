@@ -98,3 +98,16 @@ uv run grpo_log_probs.py
 
 在首次参数更新之前，脚本会验证 current、old、reference 三份 log-prob 基本
 一致，因此 probability ratio 约为 1，KL 约为 0。
+
+## GRPO loss
+
+把 probability ratio、组内 advantage、裁剪目标、KL 惩罚和 completion mask
+组合成最终的标量 loss：
+
+```bash
+uv run grpo_loss.py
+```
+
+脚本会在一小批 Countdown rollout 上计算 loss 并执行反向传播，但不会调用
+优化器更新参数。每个回答先对自己的有效 token 求平均，因此不同长度的回答在
+整体 loss 中具有相同权重。
