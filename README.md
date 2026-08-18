@@ -111,3 +111,28 @@ uv run grpo_loss.py
 脚本会在一小批 Countdown rollout 上计算 loss 并执行反向传播，但不会调用
 优化器更新参数。每个回答先对自己的有效 token 求平均，因此不同长度的回答在
 整体 loss 中具有相同权重。
+
+## 完整 GRPO 训练
+
+运行完整的组采样、奖励、GRPO loss、反向传播、参数更新和验证循环：
+
+```bash
+uv run grpo_train.py
+```
+
+每批 rollout 会复用四次：第一次更新时 ratio 从 1 开始，后续更新才会体现
+current policy 与 old policy 的差异，并触发 clipping。reference 始终保持为
+最初的 SFT 模型。训练结束后，policy 保存在
+`checkpoints/countdown_grpo.pt`。
+
+到这里，完整学习流程为：
+
+```text
+Tiny Shakespeare 预训练
+          ↓
+Countdown 求解器答案 SFT
+          ↓
+Countdown 组采样与规则奖励
+          ↓
+GRPO 多轮策略更新
+```
